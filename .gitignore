@@ -12,4 +12,7 @@ count.txt
 .vinxi
 todos.json
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 .mastra
