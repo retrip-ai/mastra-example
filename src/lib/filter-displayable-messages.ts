@@ -88,8 +88,9 @@ export function filterDisplayableMessages(messages: UIMessage[]): UIMessage[] {
 			return hasDisplayableContent;
 		});
 
-	// Remove duplicate consecutive assistant messages with dynamic-tool
-	// Also remove text-only assistant messages that follow a dynamic-tool
+	// Remove duplicate consecutive assistant messages with dynamic-tool from AGENT networks
+	// Only deduplicate when the dynamic-tool is from an agent (has childMessages with result)
+	// Tool-based dynamic-tools (like web-search) have their response in a separate text message
 	const deduplicatedMessages: UIMessage[] = [];
 	let i = 0;
 	
@@ -101,28 +102,47 @@ export function filterDisplayableMessages(messages: UIMessage[]): UIMessage[] {
 			currentMessage.role === 'assistant' &&
 			currentMessage.parts.some((p) => p.type === 'dynamic-tool')
 		) {
-			let lastRelevantIndex = i;
+			// Check if this is an AGENT-based dynamic-tool (has childMessages with text result)
+			// Tool-based dynamic-tools don't have childMessages, so we shouldn't deduplicate
+			const dynamicToolPart = currentMessage.parts.find((p) => p.type === 'dynamic-tool') as {
+				type: 'dynamic-tool';
+				output?: {
+					childMessages?: Array<{ type: string; content?: string }>;
+					result?: string;
+				};
+			} | undefined;
 			
-			// Look ahead for consecutive assistant messages
-			while (lastRelevantIndex + 1 < filteredMessages.length) {
-				const nextMessage = filteredMessages[lastRelevantIndex + 1];
+			const isAgentNetwork = dynamicToolPart?.output?.childMessages?.some(
+				(child) => child.type === 'text' && child.content
+			);
+			
+			if (isAgentNetwork) {
+				// For agent networks, skip consecutive assistant messages (they're duplicates)
+				let lastRelevantIndex = i;
 				
-				// Skip if next is also assistant with dynamic-tool or text-only
-				if (nextMessage.role === 'assistant') {
-					const hasDynamicTool = nextMessage.parts.some((p) => p.type === 'dynamic-tool');
-					const hasOnlyText = nextMessage.parts.every((p) => p.type === 'text');
+				while (lastRelevantIndex + 1 < filteredMessages.length) {
+					const nextMessage = filteredMessages[lastRelevantIndex + 1];
 					
-					if (hasDynamicTool || hasOnlyText) {
-						lastRelevantIndex++;
-						continue;
+					if (nextMessage.role === 'assistant') {
+						const hasDynamicTool = nextMessage.parts.some((p) => p.type === 'dynamic-tool');
+						const hasOnlyText = nextMessage.parts.every((p) => p.type === 'text');
+						
+						if (hasDynamicTool || hasOnlyText) {
+							lastRelevantIndex++;
+							continue;
+						}
 					}
+					break;
 				}
-				break;
+				
+				deduplicatedMessages.push(currentMessage);
+				i = lastRelevantIndex + 1;
+			} else {
+				// For tool-based networks (like web-search), keep all messages
+				// The response comes in a separate text message
+				deduplicatedMessages.push(currentMessage);
+				i++;
 			}
-			
-			// Keep only the first dynamic-tool message (has the complete info)
-			deduplicatedMessages.push(currentMessage);
-			i = lastRelevantIndex + 1;
 		} else {
 			deduplicatedMessages.push(currentMessage);
 			i++;

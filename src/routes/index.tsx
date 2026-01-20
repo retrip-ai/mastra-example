@@ -22,6 +22,7 @@ const suggestions = [
 function HomePage() {
 	const { threadId } = Route.useLoaderData();
 	const [inputValue, setInputValue] = useState('');
+	const [searchEnabled, setSearchEnabled] = useState(false);
 	const { navigateToChat } = useChatNavigation();
 
 	const handleSubmit = useCallback(
@@ -29,16 +30,16 @@ function HomePage() {
 			e.preventDefault();
 			if (!inputValue.trim()) return;
 
-			navigateToChat(threadId, inputValue);
+			navigateToChat(threadId, inputValue, searchEnabled);
 		},
-		[inputValue, navigateToChat, threadId]
+		[inputValue, navigateToChat, threadId, searchEnabled]
 	);
 
 	const handleSuggestionClick = useCallback(
 		(suggestion: string) => {
-			navigateToChat(threadId, suggestion);
+			navigateToChat(threadId, suggestion, searchEnabled);
 		},
-		[navigateToChat, threadId]
+		[navigateToChat, threadId, searchEnabled]
 	);
 
 	return (
@@ -59,7 +60,9 @@ function HomePage() {
 				<ChatInput
 					disabled={!inputValue.trim()}
 					onChange={setInputValue}
+					onSearchEnabledChange={setSearchEnabled}
 					onSubmit={handleSubmit}
+					searchEnabled={searchEnabled}
 					value={inputValue}
 				/>
 			</div>

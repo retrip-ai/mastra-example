@@ -18,6 +18,7 @@ interface ChatInputProps {
 	value: string;
 	onChange: (value: string) => void;
 	onSubmit: (e: React.FormEvent) => void;
+	onStop?: () => void;
 	disabled?: boolean;
 	status?: 'ready' | 'streaming' | 'submitted' | 'error';
 	placeholder?: string;
@@ -26,15 +27,20 @@ interface ChatInputProps {
 		maxTokens: number;
 	};
 	messagesCount?: number;
+	searchEnabled?: boolean;
+	onSearchEnabledChange?: (enabled: boolean) => void;
 }
 
 export function ChatInput({
 	value,
 	onChange,
 	onSubmit,
+	onStop,
 	disabled,
 	status = 'ready',
 	placeholder = 'Ask about travel destinations...',
+	searchEnabled = false,
+	onSearchEnabledChange,
 }: ChatInputProps) {
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'Enter' && !e.shiftKey) {
@@ -63,13 +69,28 @@ export function ChatInput({
 									<PromptInputActionAddAttachments />
 								</PromptInputActionMenuContent>
 							</PromptInputActionMenu>
-							<PromptInputButton>
+							<PromptInputButton
+								onClick={(e) => {
+									e.preventDefault();
+									onSearchEnabledChange?.(!searchEnabled);
+								}}
+								variant={searchEnabled ? 'default' : 'ghost'}
+							>
 								<GlobeIcon size={16} />
 								<span>Search</span>
 							</PromptInputButton>
 						</PromptInputTools>
 
-						<PromptInputSubmit disabled={disabled} status={status} />
+						<PromptInputSubmit 
+							disabled={disabled} 
+							status={status}
+							onClick={(e) => {
+								if (status === 'streaming' && onStop) {
+									e.preventDefault();
+									onStop();
+								}
+							}}
+						/>
 					</PromptInputFooter>
 				</PromptInput>
 			</form>

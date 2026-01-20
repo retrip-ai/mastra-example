@@ -134,13 +134,42 @@ export const resolveInitialMessages = (messages: UIMessage[]): UIMessage[] => {
 					}
 
 					// Build the result object
-					const result =
-						primitiveType === 'tool'
-							? finalResult?.result
-							: {
-									childMessages: childMessages,
-									result: finalResult?.text || '',
-								};
+					// For tools, create a structure with childMessages that includes the tool output
+					// This allows MessagePartRenderer to render sources correctly
+					let result: {
+						childMessages: ChildMessage[];
+						result: string;
+					};
+					if (primitiveType === 'tool') {
+						const toolResult = finalResult?.result as {
+							text?: string;
+							sources?: Array<{
+								url: string;
+								title?: string;
+								description?: string;
+								lastUpdated?: string;
+							}>;
+						} | undefined;
+						
+						// Create childMessages structure for tool results
+						result = {
+							childMessages: [
+								{
+									type: 'tool' as const,
+									toolCallId: json.finalResult?.toolCallId || primitiveId,
+									toolName: primitiveId,
+									args: json.input as Record<string, unknown>,
+									toolOutput: toolResult as Record<string, unknown>,
+								},
+							],
+							result: toolResult?.text || '',
+						};
+					} else {
+						result = {
+							childMessages: childMessages,
+							result: finalResult?.text || '',
+						};
+					}
 
 					// Return the transformed message with dynamic-tool part
 					const nextMessage = {

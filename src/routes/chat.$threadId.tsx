@@ -1,8 +1,8 @@
 import { useChat } from '@ai-sdk/react';
-import { createFileRoute, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, redirect, useRouterState } from '@tanstack/react-router';
 import { DefaultChatTransport } from 'ai';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import {
@@ -10,10 +10,7 @@ import {
 	ConversationContent,
 	ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
-import {
-	Message,
-	MessageContent,
-} from '@/components/ai-elements/message';
+import { Message, MessageContent } from '@/components/ai-elements/message';
 import { ChatEmptyState, ChatInput, ChatLayout, MessagePartRenderer } from '@/components/chat';
 import { useInvalidateThreads } from '@/hooks/use-invalidate-threads';
 import { hasRenderableContent } from '@/lib/chat-utils';
@@ -63,43 +60,70 @@ function ChatPage() {
 	const routerState = useRouterState();
 	const [inputValue, setInputValue] = useState('');
 	const initialMessageSentRef = useRef(false);
-	const navigate = useNavigate();
-	const { invalidateThreads, invalidateThreadMessages } = useInvalidateThreads();
+	const { invalidateThreads } = useInvalidateThreads();
 
-	// Obtener el mensaje inicial del estado de navegación
-	const initialMessage = (routerState.location.state as { initialMessage?: string })
-		?.initialMessage;
+	// Obtener el mensaje inicial y searchEnabled del estado de navegación
+	const navigationState = routerState.location.state as {
+		initialMessage?: string;
+		searchEnabled?: boolean;
+	};
+	const initialMessage = navigationState?.initialMessage;
+	const initialSearchEnabled = navigationState?.searchEnabled ?? false;
+
+	const [searchEnabled, setSearchEnabled] = useState(initialSearchEnabled);
+
+	// Usar ref para que prepareSendMessagesRequest acceda al valor actual
+	// sin necesidad de recrear el transport
+	const searchEnabledRef = useRef(searchEnabled);
+
+	// Sincronizar ref con state
+	useEffect(() => {
+		searchEnabledRef.current = searchEnabled;
+	}, [searchEnabled]);
+
+	// Usar mensajes del loader como base
+	const loaderMessages = loaderData.initialMessages;
 
 	// Usar useQuery para obtener mensajes frescos al navegar de vuelta
+	// Solo habilitar si NO es chat nuevo Y el thread existe
 	const { data: freshMessages } = useQuery({
 		...threadMessagesQueryOptions(threadId),
-		enabled: !isNewChat, // Solo para chats existentes
+		enabled: !isNewChat && loaderData.threadExists,
 	});
 
-	// Usar freshMessages si están disponibles, sino usar initialMessages del loader
-	const initialMessages = freshMessages?.messages || loaderData.initialMessages;
+	// Usar freshMessages si están disponibles, sino usar del loader
+	const initialMessages = freshMessages?.messages || loaderMessages;
 
-	const { messages, sendMessage, status } = useChat({
+	// Crear transport una sola vez - usar ref en prepareSendMessagesRequest
+	// para acceder al valor actual de searchEnabled sin recrear el transport
+	const transport = useMemo(
+		() =>
+			new DefaultChatTransport({
+				api: `${MASTRA_BASE_URL}/chat`,
+				prepareSendMessagesRequest({ messages, id }) {
+					const body = {
+						id,
+						messages: messages.length > 0 ? [messages[messages.length - 1]] : [],
+						webSearchEnabled: searchEnabledRef.current, // Usar ref para valor actual
+						memory: {
+							thread: threadId,
+							resource: RESOURCE_ID,
+						},
+					};
+
+					return {
+						body,
+					};
+				},
+			}),
+		[threadId] // Solo recrear si cambia threadId
+	);
+
+	const { messages, sendMessage, status, stop } = useChat({
 		id: threadId,
 		messages: initialMessages,
 		generateId: () => uuidv4(),
-		transport: new DefaultChatTransport({
-			api: `${MASTRA_BASE_URL}/chat`,
-			prepareSendMessagesRequest({ messages, id }) {
-				const body = {
-					id,
-					messages: messages.length > 0 ? [messages[messages.length - 1]] : [],
-					memory: {
-						thread: threadId,
-						resource: RESOURCE_ID,
-					},
-				};
-
-				return {
-					body,
-				};
-			},
-		}),
+		transport,
 	});
 
 	// Enviar mensaje inicial si viene del estado de navegación
@@ -107,20 +131,35 @@ function ChatPage() {
 		if (isNewChat && initialMessage && !initialMessageSentRef.current && status !== 'streaming') {
 			initialMessageSentRef.current = true;
 			sendMessage({ text: initialMessage });
-
-			// Limpiar el param ?new de la URL
-			navigate({
-				to: '/chat/$threadId',
-				params: { threadId },
-				search: {}, // Sin el param new
-				replace: true,
-			});
-
-			// Invalidar threads y messages después de enviar mensaje
-			invalidateThreads();
-			invalidateThreadMessages(threadId);
 		}
-	}, [isNewChat, initialMessage, status, sendMessage, navigate, threadId, invalidateThreads, invalidateThreadMessages]);
+	}, [isNewChat, initialMessage, status, sendMessage]);
+
+	// Invalidar threads/messages cuando el stream finaliza exitosamente
+	const prevStatusRef = useRef(status);
+
+	useEffect(() => {
+		const prevStatus = prevStatusRef.current;
+		const currentStatus = status;
+
+		// Detectar cuando el stream termina (streaming -> ready)
+		if (prevStatus === 'streaming' && currentStatus === 'ready') {
+			// Validación adicional: verificar que hay al menos 2 mensajes
+			// (usuario + asistente) para evitar invalidar si hubo un error
+			if (messages.length > 1) {
+				console.log('✅ Stream completed successfully, invalidating queries...');
+
+				// Invalidar threads para actualizar la lista en sidebar
+				invalidateThreads(0); // Sin delay, el thread ya existe
+			} else {
+				console.warn(
+					'⚠️ Stream ended but only 1 message, possible error - skipping invalidation'
+				);
+			}
+		}
+
+		// Actualizar ref para la próxima comparación
+		prevStatusRef.current = currentStatus;
+	}, [status, messages.length, invalidateThreads]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -129,9 +168,7 @@ function ChatPage() {
 		sendMessage({ text: inputValue });
 		setInputValue('');
 
-		// Invalidar threads y messages después de enviar mensaje
-		invalidateThreads();
-		invalidateThreadMessages(threadId);
+		// Las invalidaciones ahora ocurren cuando el stream termine exitosamente
 	};
 
 	return (
@@ -150,17 +187,17 @@ function ChatPage() {
 									<MessageContent>
 										{message.parts.map((part, partIndex) => {
 											const hasTextPart = message.parts.some(
-												(p) => p.type === 'text' && 'text' in p && (p.text as string)?.trim(),
+												(p) => p.type === 'text' && 'text' in p && (p.text as string)?.trim()
 											);
 											return (
 												<MessagePartRenderer
+													allParts={message.parts}
 													hasTextPart={hasTextPart}
 													isLastMessage={index === messages.length - 1}
 													key={partIndex}
 													part={part}
 													partIndex={partIndex}
 													status={status}
-													allParts={message.parts}
 												/>
 											);
 										})}
@@ -175,9 +212,12 @@ function ChatPage() {
 
 			<div className="grid shrink-0 gap-4 pt-4">
 				<ChatInput
-					disabled={!inputValue.trim() || status === 'streaming'}
+					disabled={!inputValue.trim() && status !== 'streaming'}
 					onChange={setInputValue}
+					onSearchEnabledChange={setSearchEnabled}
+					onStop={stop}
 					onSubmit={handleSubmit}
+					searchEnabled={searchEnabled}
 					status={status}
 					value={inputValue}
 				/>

@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 
 interface ChatNavigationState extends HistoryState {
 	initialMessage?: string;
+	searchEnabled?: boolean;
 }
 
 /**
@@ -14,7 +15,7 @@ export function useChatNavigation() {
 	const navigate = useNavigate();
 
 	const navigateToChat = useCallback(
-		(threadId: string, initialMessage: string) => {
+		(threadId: string, initialMessage: string, searchEnabled?: boolean) => {
 			navigate({
 				to: '/chat/$threadId',
 				params: { threadId },
@@ -22,6 +23,7 @@ export function useChatNavigation() {
 				search: { new: true },
 				state: {
 					initialMessage,
+					searchEnabled,
 				} as ChatNavigationState,
 			});
 		},

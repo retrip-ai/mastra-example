@@ -103,5 +103,5 @@ export const threadMessagesQueryOptions = (threadId: string) => ({
 	gcTime: 0,
 	retry: false,
 	refetchOnWindowFocus: false,
-	refetchOnMount: 'always' as const,
+	refetchOnMount: false, // Cambiar a false para evitar refetch en new chats
 });

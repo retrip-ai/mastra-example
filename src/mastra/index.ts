@@ -30,6 +30,23 @@ export const mastra = new Mastra({
 			allowMethods: ['*'],
 			allowHeaders: ['*'],
 		},
+		middleware: [
+			{
+				path: '/chat',
+				handler: async (c, next) => {
+					// Read body and populate requestContext with webSearchEnabled
+					const body = await c.req.json();
+					const webSearchEnabled = body?.webSearchEnabled ?? false;
+
+					// Get or create requestContext
+					const requestContext = c.get('requestContext') || new Map();
+					requestContext.set('webSearchEnabled', webSearchEnabled);
+					c.set('requestContext', requestContext);
+
+					await next();
+				},
+			},
+		],
 		apiRoutes: [
 			networkRoute({
 				path: '/chat',

@@ -19,11 +19,14 @@ Use this as a starting point for building your own AI-powered applications with 
 ## Features
 
 * 🤖 **AI Agent Network** - Routing agent delegates to specialized agents (weather, destinations)
+* 🔍 **Web Search** - Real-time web search powered by Perplexity Sonar with source citations
 * 🔄 **Real-time Streaming** - See AI responses, tool calls, and reasoning as they happen
 * 💬 **Thread Persistence** - Chat history saved to SQLite via Mastra
+* 📝 **Auto-generated Titles** - Thread titles automatically generated using Gemini Flash Lite
 * 🎨 **Dynamic UI** - Renders different types of stream events:
   * Text responses
   * Tool invocations (parameters & results)
+  * Web search sources with citations
   * Network execution (agent routing decisions)
   * Model reasoning (chain of thought)
 
@@ -46,9 +49,10 @@ Create a `.env` file in the root directory:
 
 ```bash
 GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key_here
+PERPLEXITY_API_KEY=your_perplexity_api_key_here  # Optional: for web search
 ```
 
-> **Important:** You must have a valid Gemini API key for the AI agents to work.
+> **Important:** You must have a valid Gemini API key for the AI agents to work. The Perplexity API key is optional but required for web search functionality.
 
 ### 3. Run Development Server
 
@@ -227,10 +231,10 @@ flowchart TD
 1. User types message → `useChat()` hook (@ai-sdk/react)
 2. `DefaultChatTransport` → POST to `http://localhost:4111/chat`
 3. Mastra backend receives via `networkRoute()` (@mastra/ai-sdk)
-4. `routingAgent` analyzes and delegates to sub-agents
+4. `routingAgent` analyzes and delegates to sub-agents or tools
 5. Real-time stream events:
    * `text` chunks
-   * `tool-*` invocations
+   * `tool-*` invocations (including web-search with sources)
    * `data-network` agent execution
    * `reasoning` model thoughts
 6. Frontend dynamically renders each part
@@ -239,8 +243,8 @@ flowchart TD
 
 1. `useQuery()` + `useMastraClient()` → `listThreadMessages()`
 2. `toAISdkV5Messages()` converts Mastra format → AI SDK format
-3. `resolveInitialMessages()` resolves network execution data from memory
-4. `filterDisplayableMessages()` removes internal system messages and reasoning from history
+3. `resolveInitialMessages()` resolves network execution data from memory (handles both agent and tool-based networks)
+4. `filterDisplayableMessages()` removes internal system messages and reasoning from history (smart deduplication for agent vs tool networks)
 5. `setMessages()` sets chat history
 
 ### 🎨 Rendering
@@ -249,7 +253,9 @@ flowchart TD
 
 * **text** → `<MessageResponse>`
 * **data-network** → `<NetworkExecution>` (shows routing decisions)
-* **tool-**\* → `<Tool>` (parameters and results)
+* **tool-web-search** → `<Sources>` (web search results with citations)
+* **tool-**\* → `<Tool>` (parameters and results for other tools)
+* **dynamic-tool** → `<Sources>` or `<Tool>` (history: web-search shows sources, others show tool UI)
 * **reasoning** → `<Reasoning>` (model thoughts, only during streaming)
 
 ## Project Structure
@@ -287,7 +293,10 @@ src/
 │   │   ├── routing-agent.ts      # Main routing logic
 │   │   ├── weather-agent.ts      # Weather queries
 │   │   └── destinations-agent.ts # Travel recommendations
+│   ├── tools/              # Mastra tools
+│   │   └── web-search-tool.ts    # Web search via Perplexity Sonar
 │   ├── workflows/          # Mastra workflows
+│   ├── memory.ts           # Memory configuration with title generation
 │   └── index.ts            # Mastra configuration
 └── routes/
     ├── index.tsx           # Home page
@@ -317,7 +326,10 @@ bun run check     # Lint + format
 * **AI SDK:** [@ai-sdk/react](https://sdk.vercel.ai/docs)
 * **State Management:** [TanStack Query](https://tanstack.com/query)
 * **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-* **AI Model:** Google Gemini (via @google/generative-ai)
+* **AI Models:** 
+  * Google Gemini 3 Flash Preview (main agent)
+  * Google Gemini 2.5 Flash Lite (title generation)
+  * Perplexity Sonar (web search)
 * **Database:** SQLite (via @mastra/libsql)
 
 ## Learn More
