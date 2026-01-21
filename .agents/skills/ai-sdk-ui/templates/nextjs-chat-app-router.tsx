@@ -86,7 +86,7 @@ export default function ChatPage() {
             onClick={() => window.location.reload()}
             className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
           >
-            New Chat
+            New Agent
           </button>
         )}
       </div>
@@ -129,16 +129,14 @@ export default function ChatPage() {
             {messages.map((message, idx) => (
               <div
                 key={message.id}
-                className={`flex ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
               >
                 <div
-                  className={`max-w-[75%] rounded-lg p-4 ${
-                    message.role === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white border shadow-sm'
-                  }`}
+                  className={`max-w-[75%] rounded-lg p-4 ${message.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white border shadow-sm'
+                    }`}
                 >
                   {/* Role label (only for assistant on first message) */}
                   {message.role === 'assistant' && idx === 1 && (

@@ -156,7 +156,7 @@ export default function PersistentChat() {
             onClick={handleNewChat}
             className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
           >
-            New Chat
+            New Agent
           </button>
           {messages.length > 0 && (
             <button
@@ -188,16 +188,14 @@ export default function PersistentChat() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
               >
                 <div
-                  className={`max-w-[70%] p-3 rounded-lg ${
-                    message.role === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white border shadow-sm'
-                  }`}
+                  className={`max-w-[70%] p-3 rounded-lg ${message.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white border shadow-sm'
+                    }`}
                 >
                   {message.content}
                 </div>

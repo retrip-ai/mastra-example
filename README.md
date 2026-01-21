@@ -1,4 +1,4 @@
-# Travel Assistant - Mastra AI Chat
+# Assistant - Mastra AI Chat
 
 > **Example Project**: This is a demo application showcasing how to integrate **Mastra** with **TanStack Start**. It demonstrates best practices for building AI-powered applications with agent networks, real-time streaming, and dynamic UI components.
 
@@ -257,6 +257,24 @@ flowchart TD
 * **tool-**\* → `<Tool>` (parameters and results for other tools)
 * **dynamic-tool** → `<Sources>` or `<Tool>` (history: web-search shows sources, others show tool UI)
 * **reasoning** → `<Reasoning>` (model thoughts, only during streaming)
+
+### 🔧 Adding Custom Tool UIs
+
+You can register custom UI components for your tools:
+
+```tsx
+import { toolUIRegistry } from '@/components/chat/renderers';
+
+toolUIRegistry.register({
+    toolIds: ['my-tool-id'],        // Tool ID(s) from Mastra
+    Component: MyToolCard,           // Your React component
+    isValidOutput: isMyToolData,     // Type guard function
+});
+```
+
+The component will automatically render in **streaming** and **history** contexts.
+
+See [`.agent/skills/tool-ui/SKILL.md`](.agent/skills/tool-ui/SKILL.md) for full documentation.
 
 ## Project Structure
 

@@ -296,7 +296,7 @@ const { messages } = useChat({
 });
 
 // Navigation
-<Link href={`/chat?chatId=${newChatId}`}>New Chat</Link>
+<Link href={`/chat?chatId=${newChatId}`}>New Agent</Link>
 ```
 
 ---

@@ -98,7 +98,7 @@ export function ChatHistory({
 				<div className="p-4">
 					<Button className="w-full justify-start" onClick={handleNewChat} variant="outline">
 						<PlusIcon className="mr-2 size-4" />
-						New Chat
+						New Agent
 					</Button>
 				</div>
 
@@ -124,9 +124,9 @@ export function ChatHistory({
 											<p className="text-xs text-muted-foreground">
 												{thread.createdAt
 													? formatDistanceToNow(new Date(thread.createdAt), {
-															addSuffix: true,
-															locale: es,
-														})
+														addSuffix: true,
+														locale: es,
+													})
 													: ''}
 											</p>
 										</div>

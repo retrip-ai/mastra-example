@@ -4,7 +4,7 @@ interface ChatEmptyStateProps {
 }
 
 export function ChatEmptyState({
-	title = 'Travel Assistant',
+	title = 'Assistant',
 	description = 'Ask me about destinations, weather, and travel recommendations',
 }: ChatEmptyStateProps) {
 	return (

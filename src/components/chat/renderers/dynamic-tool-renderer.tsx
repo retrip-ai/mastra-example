@@ -2,13 +2,14 @@ import { memo } from 'react';
 import { MessageResponse } from '@/components/ai-elements/message';
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@/components/ai-elements/tool';
-import { isWeatherData, WeatherCard } from '@/components/ai-elements/weather-card';
+import { toolUIRegistry } from './tool-ui-registry';
 import type { DynamicToolPart, MessageRenderer, RendererProps, SourceData } from './types';
 import { isDynamicToolPart } from './types';
 
 /**
  * Dynamic Tool Renderer Component
  * Renders network execution results from memory with child messages
+ * Uses toolUIRegistry for custom tool UI components
  */
 const DynamicToolRendererComponent = memo<RendererProps<DynamicToolPart>>(({ part, partIndex }) => {
     return (
@@ -43,11 +44,11 @@ const DynamicToolRendererComponent = memo<RendererProps<DynamicToolPart>>(({ par
                         return null;
                     }
 
-                    // Special handling for weather tool - show WeatherCard component
-                    if (child.toolName === 'weatherTool' && child.toolOutput) {
-                        if (isWeatherData(child.toolOutput)) {
-                            return <WeatherCard data={child.toolOutput} key={childIndex} />;
-                        }
+                    // Check if tool has a custom UI component in the registry
+                    const customUI = toolUIRegistry.getComponent(child.toolName, child.toolOutput);
+                    if (customUI) {
+                        const { Component, data } = customUI;
+                        return <Component data={data} key={childIndex} />;
                     }
 
                     // Default tool rendering for other tools
@@ -87,3 +88,4 @@ export const dynamicToolRenderer: MessageRenderer<DynamicToolPart> = {
     Component: DynamicToolRendererComponent as unknown as React.FC<RendererProps>,
     priority: 8,
 };
+

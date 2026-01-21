@@ -13,8 +13,7 @@ import { SearchXIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { MASTRA_BASE_URL } from '@/lib/constants';
 import { threadsQueryOptions } from '@/lib/mastra-queries';
-import { Header } from '../components/header';
-import { Sidebar } from '../components/sidebar';
+import { AppSidebar } from '../components/app-sidebar';
 import { ThemeProvider } from '../components/theme-provider';
 import { Button } from '../components/ui/button';
 import {
@@ -24,6 +23,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from '../components/ui/empty';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '../components/ui/sidebar';
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
 import appCss from '../styles.css?url';
 
@@ -45,12 +45,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: 'width=device-width, initial-scale=1',
 			},
 			{
-				title: 'Travel Assistant - Mastra AI Chat',
+				title: 'Assistant - Mastra AI Chat',
 			},
 			{
 				name: 'description',
 				content:
-					'Real-time AI Travel Assistant Demo. Built with Mastra, TanStack Start, and AI SDK. Features agent networks, streaming responses, and dynamic UI.',
+					'Real-time AI Assistant Demo. Built with Mastra, TanStack Start, and AI SDK. Features agent networks, streaming responses, and dynamic UI.',
 			},
 			// Open Graph / Facebook
 			{
@@ -59,12 +59,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 			{
 				property: 'og:title',
-				content: 'Travel Assistant - Mastra AI Chat',
+				content: 'Assistant - Mastra AI Chat',
 			},
 			{
 				property: 'og:description',
 				content:
-					'Real-time AI Travel Assistant Demo. Built with Mastra, TanStack Start, and AI SDK.',
+					'Real-time AI Assistant Demo. Built with Mastra, TanStack Start, and AI SDK.',
 			},
 			{
 				property: 'og:image',
@@ -85,12 +85,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 			{
 				name: 'twitter:title',
-				content: 'Travel Assistant - Mastra AI Chat',
+				content: 'Assistant - Mastra AI Chat',
 			},
 			{
 				name: 'twitter:description',
 				content:
-					'Real-time AI Travel Assistant Demo. Built with Mastra, TanStack Start, and AI SDK.',
+					'Real-time AI Assistant Demo. Built with Mastra, TanStack Start, and AI SDK.',
 			},
 			{
 				name: 'twitter:image',
@@ -139,9 +139,7 @@ function RootDocument() {
 			<body>
 				<MastraReactProvider baseUrl={MASTRA_BASE_URL}>
 					<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-						<Header />
-						<div className="flex h-[calc(100vh-72px)]">
-							{/* Sidebar - siempre visible */}
+						<SidebarProvider>
 							<Suspense
 								fallback={
 									<aside className="flex h-full w-64 flex-col border-r bg-background">
@@ -149,14 +147,17 @@ function RootDocument() {
 									</aside>
 								}
 							>
-								<Sidebar />
+								<AppSidebar />
 							</Suspense>
-
-							{/* Main content */}
-							<main className="flex-1 overflow-auto">
-								<Outlet />
-							</main>
-						</div>
+							<SidebarInset className="flex flex-col h-svh">
+								<header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 md:hidden">
+									<SidebarTrigger />
+								</header>
+								<main className="flex-1 min-h-0">
+									<Outlet />
+								</main>
+							</SidebarInset>
+						</SidebarProvider>
 					</ThemeProvider>
 				</MastraReactProvider>
 				<TanStackDevtools

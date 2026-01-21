@@ -10,7 +10,7 @@ const baseModel = google('gemini-3-flash-preview');
 
 export const routingAgent = new Agent({
 	id: 'routing-agent',
-	name: 'Travel Assistant',
+	name: 'Assistant',
 	instructions: ({ requestContext }) => {
 		const webSearchEnabled = requestContext?.get('webSearchEnabled');
 

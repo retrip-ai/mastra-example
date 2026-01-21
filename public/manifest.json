@@ -1,7 +1,7 @@
 {
-  "short_name": "Travel Assistant",
-  "name": "Travel Assistant - Mastra AI Chat",
-  "description": "Real-time AI Travel Assistant Demo. Built with Mastra, TanStack Start, and AI SDK.",
+  "short_name": "Assistant",
+  "name": "Assistant - Mastra AI Chat",
+  "description": "Real-time AI Assistant Demo. Built with Mastra, TanStack Start, and AI SDK.",
   "icons": [
     {
       "src": "favicon.ico",
