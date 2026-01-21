@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { ChatEmptyState, ChatInput, ChatLayout } from '@/components/chat';
+import { usePageTitle } from '@/components/page-title-context';
 import { useChatNavigation } from '@/hooks/use-chat-navigation';
 
 export const Route = createFileRoute('/')({
@@ -24,6 +25,11 @@ function HomePage() {
 	const [inputValue, setInputValue] = useState('');
 	const [searchEnabled, setSearchEnabled] = useState(false);
 	const { navigateToChat } = useChatNavigation();
+	const { setTitle } = usePageTitle();
+
+	useEffect(() => {
+		setTitle('New Agent');
+	}, [setTitle]);
 
 	const handleSubmit = useCallback(
 		(e: React.FormEvent) => {
@@ -46,7 +52,7 @@ function HomePage() {
 		<ChatLayout>
 			<ChatEmptyState />
 
-			<div className="grid shrink-0 gap-4 pt-4">
+			<div className="shrink-0 space-y-4 pb-2 px-2">
 				<Suggestions>
 					{suggestions.map((suggestion) => (
 						<Suggestion

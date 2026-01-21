@@ -12,6 +12,8 @@ import {
 } from '@/components/ai-elements/conversation';
 import { Message, MessageContent } from '@/components/ai-elements/message';
 import { ChatEmptyState, ChatInput, ChatLayout, MemoizedMessage } from '@/components/chat';
+import { usePageTitle } from '@/components/page-title-context';
+import { useThreads } from '@/hooks/use-threads';
 import { useInvalidateThreads } from '@/hooks/use-invalidate-threads';
 import { hasRenderableContent } from '@/lib/chat-utils';
 import { MASTRA_BASE_URL, RESOURCE_ID } from '@/lib/constants';
@@ -58,6 +60,8 @@ function ChatPage() {
 	const { new: isNewChat } = Route.useSearch();
 	const loaderData = Route.useLoaderData();
 	const routerState = useRouterState();
+	const { setTitle } = usePageTitle();
+	const { data: threads } = useThreads();
 	const [inputValue, setInputValue] = useState('');
 	const initialMessageSentRef = useRef(false);
 	const { invalidateThreads } = useInvalidateThreads();
@@ -80,6 +84,24 @@ function ChatPage() {
 	useEffect(() => {
 		searchEnabledRef.current = searchEnabled;
 	}, [searchEnabled]);
+
+	// Actualizar título de la página
+	useEffect(() => {
+		if (isNewChat) {
+			setTitle('New Chat');
+			return;
+		}
+
+		if (threads) {
+			const currentThread = threads.find((t) => t.id === threadId);
+			if (currentThread?.title) {
+				setTitle(currentThread.title);
+			} else {
+				// Si no hay título o no se encuentra, usar una fecha o fallback
+				setTitle('Chat');
+			}
+		}
+	}, [threadId, threads, isNewChat, setTitle]);
 
 	// Usar mensajes del loader como base
 	const loaderMessages = loaderData.initialMessages;
@@ -171,7 +193,7 @@ function ChatPage() {
 
 	return (
 		<ChatLayout>
-			<Conversation className="flex-1">
+			<Conversation className="flex-1 max-md:pt-12">
 				<ConversationContent>
 					{messages.length === 0 ? (
 						<ChatEmptyState />
@@ -197,7 +219,7 @@ function ChatPage() {
 				<ConversationScrollButton />
 			</Conversation>
 
-			<div className="grid shrink-0 gap-4 pt-4">
+			<div className="shrink-0 pb-2 px-2">
 				<ChatInput
 					disabled={!inputValue.trim() && status !== 'streaming'}
 					onChange={setInputValue}

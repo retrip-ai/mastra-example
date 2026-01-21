@@ -14,6 +14,7 @@ import { Suspense } from 'react';
 import { MASTRA_BASE_URL } from '@/lib/constants';
 import { threadsQueryOptions } from '@/lib/mastra-queries';
 import { AppSidebar } from '../components/app-sidebar';
+import { PageTitleProvider, usePageTitle } from '../components/page-title-context';
 import { ThemeProvider } from '../components/theme-provider';
 import { Button } from '../components/ui/button';
 import {
@@ -130,6 +131,21 @@ function NotFound() {
 	);
 }
 
+function MobileHeader() {
+	const { title } = usePageTitle();
+
+	return (
+		<header className="absolute top-0 left-0 z-10 flex h-12 items-center gap-2 px-4 max-md:bg-background/80 max-md:backdrop-blur-sm max-md:border-b max-md:border-border/50 max-md:w-full">
+			<SidebarTrigger />
+			{title && (
+				<span className="hidden max-md:block text-sm font-medium truncate">
+					{title}
+				</span>
+			)}
+		</header>
+	);
+}
+
 function RootDocument() {
 	return (
 		<html lang="en" suppressHydrationWarning>
@@ -139,25 +155,25 @@ function RootDocument() {
 			<body>
 				<MastraReactProvider baseUrl={MASTRA_BASE_URL}>
 					<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-						<SidebarProvider>
-							<Suspense
-								fallback={
-									<aside className="flex h-full w-64 flex-col border-r bg-background">
-										<div className="p-4 text-sm text-muted-foreground">Loading...</div>
-									</aside>
-								}
-							>
-								<AppSidebar />
-							</Suspense>
-							<SidebarInset className="flex flex-col h-svh">
-								<header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 md:hidden">
-									<SidebarTrigger />
-								</header>
-								<main className="flex-1 min-h-0">
-									<Outlet />
-								</main>
-							</SidebarInset>
-						</SidebarProvider>
+						<PageTitleProvider>
+							<SidebarProvider>
+								<Suspense
+									fallback={
+										<aside className="flex h-full w-64 flex-col border-r bg-background">
+											<div className="p-4 text-sm text-muted-foreground">Loading...</div>
+										</aside>
+									}
+								>
+									<AppSidebar />
+								</Suspense>
+								<SidebarInset className="flex flex-col h-svh">
+									<MobileHeader />
+									<main className="flex-1 min-h-0">
+										<Outlet />
+									</main>
+								</SidebarInset>
+							</SidebarProvider>
+						</PageTitleProvider>
 					</ThemeProvider>
 				</MastraReactProvider>
 				<TanStackDevtools
