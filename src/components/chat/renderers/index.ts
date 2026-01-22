@@ -22,34 +22,31 @@
  * The component will automatically render in both streaming and history contexts.
  */
 
-// Export types
-export * from './types';
-
+export { dynamicToolRenderer } from './dynamic-tool-renderer';
+export { networkRenderer } from './network-renderer';
+export { reasoningRenderer } from './reasoning-renderer';
 // Export registries
-export { rendererRegistry, RendererRegistry } from './registry';
-export { toolUIRegistry, ToolUIRegistry, type ToolUIRegistration } from './tool-ui-registry';
-
+export { RendererRegistry, rendererRegistry } from './registry';
 // Export individual renderers
 export { textRenderer } from './text-renderer';
-export { reasoningRenderer } from './reasoning-renderer';
-export { networkRenderer } from './network-renderer';
 export { toolRenderer } from './tool-renderer';
-export { dynamicToolRenderer } from './dynamic-tool-renderer';
+export { type ToolUIRegistration, ToolUIRegistry, toolUIRegistry } from './tool-ui-registry';
+// Export types
+export * from './types';
 export { weatherRenderer } from './weather-renderer';
 
+import { isWeatherData, WeatherCard } from '@/components/chat/tools/weather-card';
+import { dynamicToolRenderer } from './dynamic-tool-renderer';
+import { networkRenderer } from './network-renderer';
+import { reasoningRenderer } from './reasoning-renderer';
 // Import for registration
 import { rendererRegistry } from './registry';
 import { textRenderer } from './text-renderer';
-import { reasoningRenderer } from './reasoning-renderer';
-import { networkRenderer } from './network-renderer';
 import { toolRenderer } from './tool-renderer';
-import { dynamicToolRenderer } from './dynamic-tool-renderer';
-import { weatherRenderer } from './weather-renderer';
-import type { MessageRenderer } from './types';
-
 // Import tool UI registry and register default tool UIs
 import { toolUIRegistry } from './tool-ui-registry';
-import { WeatherCard, isWeatherData } from '@/components/ai-elements/weather-card';
+import type { MessageRenderer } from './types';
+import { weatherRenderer } from './weather-renderer';
 
 // Register all default renderers (cast to base type for registry)
 rendererRegistry.register(textRenderer as MessageRenderer);
@@ -62,7 +59,7 @@ rendererRegistry.register(weatherRenderer as MessageRenderer);
 // Register default tool UI components
 // These automatically render in both streaming and history contexts
 toolUIRegistry.register({
-    toolIds: ['get-weather', 'weatherTool'],
-    Component: WeatherCard,
-    isValidOutput: isWeatherData,
+	toolIds: ['get-weather', 'weatherTool'],
+	Component: WeatherCard,
+	isValidOutput: isWeatherData,
 });

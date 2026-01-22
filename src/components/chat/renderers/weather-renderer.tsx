@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { isWeatherData, WeatherCard } from '@/components/ai-elements/weather-card';
+import { isWeatherData, WeatherCard } from '@/components/chat/tools/weather-card';
 import { toolUIRegistry } from './tool-ui-registry';
 import type { MessageRenderer, RendererProps, ToolPart } from './types';
 import { isToolPart } from './types';

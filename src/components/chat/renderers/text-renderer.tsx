@@ -96,21 +96,23 @@ const TextRendererComponent = memo<RendererProps<TextPart>>(
                             return <span key={index}>{segment}</span>;
                         })}
                     </div>
-                    {/* Show sources list at the bottom */}
-                    <Sources>
-                        <SourcesTrigger count={webSources.length} />
-                        <SourcesContent>
-                            {webSources.map((source, i) => (
-                                <Source
-                                    description={source.description}
-                                    href={source.url}
-                                    key={i}
-                                    lastUpdated={source.lastUpdated}
-                                    title={source.title}
-                                />
-                            ))}
-                        </SourcesContent>
-                    </Sources>
+                    {/* Show sources list at the bottom only if there is no network part (which handles its own sources) */}
+                    {!allParts.some(p => p.type === 'data-network') && (
+                        <Sources>
+                            <SourcesTrigger count={webSources.length} />
+                            <SourcesContent>
+                                {webSources.map((source, i) => (
+                                    <Source
+                                        description={source.description}
+                                        href={source.url}
+                                        key={i}
+                                        lastUpdated={source.lastUpdated}
+                                        title={source.title}
+                                    />
+                                ))}
+                            </SourcesContent>
+                        </Sources>
+                    )}
                 </div>
             );
         }

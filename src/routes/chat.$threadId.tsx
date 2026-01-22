@@ -11,7 +11,7 @@ import {
 	ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
 import { Message, MessageContent } from '@/components/ai-elements/message';
-import { Shimmer } from '@/components/ai-elements/shimmer';
+import { ThinkingPlaceholder } from '@/components/chat/molecules/thinking-placeholder';
 import { ChatEmptyState, ChatInput, ChatLayout, MemoizedMessage } from '@/components/chat';
 import { usePageTitle } from '@/components/page-title-context';
 import { useThreads } from '@/hooks/use-threads';
@@ -226,19 +226,20 @@ function ChatPage() {
 							})}
 							{(() => {
 								const lastMessage = messages[messages.length - 1];
-								const shouldShowShimmer =
-									status === 'submitted' ||
-									(status === 'streaming' &&
-										(!lastMessage ||
-											lastMessage.role === 'user' ||
-											(lastMessage.role === 'assistant' &&
-												!hasRenderableContent(lastMessage as any))));
+								const showStreamingPlaceholder =
+									status === 'streaming' &&
+									(!lastMessage ||
+										lastMessage.role === 'user' ||
+										(lastMessage.role === 'assistant' &&
+											!hasRenderableContent(lastMessage as any)));
 
-								if (shouldShowShimmer) {
+								if (status === 'submitted' || showStreamingPlaceholder) {
 									return (
-										<div className="px-4 py-2">
-											<Shimmer>Trabajando...</Shimmer>
-										</div>
+										<Message from="assistant">
+											<MessageContent>
+												<ThinkingPlaceholder />
+											</MessageContent>
+										</Message>
 									);
 								}
 								return null;

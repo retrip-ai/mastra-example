@@ -1,8 +1,11 @@
+'use client';
+
 import type { ChatStatus, FileUIPart } from 'ai';
 import {
 	CornerDownLeftIcon,
 	ImageIcon,
 	Loader2Icon,
+	MicIcon,
 	PaperclipIcon,
 	PlusIcon,
 	SquareIcon,
@@ -136,7 +139,7 @@ export function PromptInputProvider({
 	// ----- attachments state (global when wrapped)
 	const [attachmentFiles, setAttachmentFiles] = useState<(FileUIPart & { id: string })[]>([]);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
-	const openRef = useRef<() => void>(() => {});
+	const openRef = useRef<() => void>(() => { });
 
 	const add = useCallback((files: File[] | FileList) => {
 		const incoming = Array.from(files);
@@ -275,48 +278,50 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
 
 	return (
 		<PromptInputHoverCard>
-			<HoverCardTrigger asChild>
-				<div
-					className={cn(
-						'group relative flex h-8 cursor-pointer select-none items-center gap-1.5 rounded-md border border-border px-1.5 font-medium text-sm transition-all hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-						className
-					)}
-					key={data.id}
-					{...props}
-				>
-					<div className="relative size-5 shrink-0">
-						<div className="absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded bg-background transition-opacity group-hover:opacity-0">
-							{isImage ? (
-								<img
-									alt={filename || 'attachment'}
-									className="size-5 object-cover"
-									height={20}
-									src={data.url}
-									width={20}
-								/>
-							) : (
-								<div className="flex size-5 items-center justify-center text-muted-foreground">
-									<PaperclipIcon className="size-3" />
-								</div>
-							)}
-						</div>
-						<Button
-							aria-label="Remove attachment"
-							className="absolute inset-0 size-5 cursor-pointer rounded p-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 [&>svg]:size-2.5"
-							onClick={(e) => {
-								e.stopPropagation();
-								attachments.remove(data.id);
-							}}
-							type="button"
-							variant="ghost"
-						>
-							<XIcon />
-							<span className="sr-only">Remove</span>
-						</Button>
+			<HoverCardTrigger
+				nativeButton={false}
+				render={
+					<div
+						className={cn(
+							'group relative flex h-8 cursor-pointer select-none items-center gap-1.5 rounded-md border border-border px-1.5 font-medium text-sm transition-all hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+							className
+						)}
+						key={data.id}
+						{...props}
+					/>
+				}
+			>
+				<div className="relative size-5 shrink-0">
+					<div className="absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded bg-background transition-opacity group-hover:opacity-0">
+						{isImage ? (
+							<img
+								alt={filename || 'attachment'}
+								className="size-5 object-cover"
+								height={20}
+								src={data.url}
+								width={20}
+							/>
+						) : (
+							<div className="flex size-5 items-center justify-center text-muted-foreground">
+								<PaperclipIcon className="size-3" />
+							</div>
+						)}
 					</div>
-
-					<span className="flex-1 truncate">{attachmentLabel}</span>
+					<Button
+						aria-label="Remove attachment"
+						className="absolute inset-0 size-5 cursor-pointer rounded p-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 [&>svg]:size-2.5"
+						onClick={(e) => {
+							e.stopPropagation();
+							attachments.remove(data.id);
+						}}
+						type="button"
+						variant="ghost"
+					>
+						<XIcon />
+						<span className="sr-only">Remove</span>
+					</Button>
 				</div>
+				<span className="flex-1 truncate">{attachmentLabel}</span>
 			</HoverCardTrigger>
 			<PromptInputHoverCardContent className="w-auto p-2">
 				<div className="w-auto space-y-3">
@@ -669,9 +674,9 @@ export const PromptInput = ({
 		const text = usingProvider
 			? controller.textInput.value
 			: (() => {
-					const formData = new FormData(form);
-					return (formData.get('message') as string) || '';
-				})();
+				const formData = new FormData(form);
+				return (formData.get('message') as string) || '';
+			})();
 
 		// Reset form immediately after capturing text to avoid race condition
 		// where user input during async blob conversion would be lost
@@ -682,7 +687,7 @@ export const PromptInput = ({
 		// Convert blob URLs to data URLs asynchronously
 		Promise.all(
 			files.map(async ({ id, ...item }) => {
-				if (item.url?.startsWith('blob:')) {
+				if (item.url && item.url.startsWith('blob:')) {
 					const dataUrl = await convertBlobUrlToDataUrl(item.url);
 					// If conversion failed, keep the original blob URL
 					return {
@@ -761,7 +766,6 @@ export type PromptInputTextareaProps = ComponentProps<typeof InputGroupTextarea>
 
 export const PromptInputTextarea = ({
 	onChange,
-	onKeyDown,
 	className,
 	placeholder = 'What would you like to know?',
 	...props
@@ -771,14 +775,6 @@ export const PromptInputTextarea = ({
 	const [isComposing, setIsComposing] = useState(false);
 
 	const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-		// Call the external onKeyDown handler first
-		onKeyDown?.(e);
-
-		// If the external handler prevented default, don't run internal logic
-		if (e.defaultPrevented) {
-			return;
-		}
-
 		if (e.key === 'Enter') {
 			if (isComposing || e.nativeEvent.isComposing) {
 				return;
@@ -834,19 +830,19 @@ export const PromptInputTextarea = ({
 
 	const controlledProps = controller
 		? {
-				value: controller.textInput.value,
-				onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
-					controller.textInput.setInput(e.currentTarget.value);
-					onChange?.(e);
-				},
-			}
+			value: controller.textInput.value,
+			onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
+				controller.textInput.setInput(e.currentTarget.value);
+				onChange?.(e);
+			},
+		}
 		: {
-				onChange,
-			};
+			onChange,
+		};
 
 	return (
 		<InputGroupTextarea
-			className={cn('field-sizing-content max-h-48 min-h-16', className)}
+			className={cn('field-sizing-content max-h-48 min-h-8', className)}
 			name="message"
 			onCompositionEnd={() => setIsComposing(false)}
 			onCompositionStart={() => setIsComposing(true)}
@@ -918,10 +914,8 @@ export const PromptInputActionMenuTrigger = ({
 	children,
 	...props
 }: PromptInputActionMenuTriggerProps) => (
-	<DropdownMenuTrigger asChild>
-		<PromptInputButton className={className} {...props}>
-			{children ?? <PlusIcon className="size-4" />}
-		</PromptInputButton>
+	<DropdownMenuTrigger render={<PromptInputButton className={className} {...props} />}>
+		{children ?? <PlusIcon className="size-4" />}
 	</DropdownMenuTrigger>
 );
 
@@ -978,6 +972,156 @@ export const PromptInputSubmit = ({
 	);
 };
 
+interface SpeechRecognition extends EventTarget {
+	continuous: boolean;
+	interimResults: boolean;
+	lang: string;
+	start(): void;
+	stop(): void;
+	onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+	onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+	onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+	onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+}
+
+interface SpeechRecognitionEvent extends Event {
+	results: SpeechRecognitionResultList;
+	resultIndex: number;
+}
+
+type SpeechRecognitionResultList = {
+	readonly length: number;
+	item(index: number): SpeechRecognitionResult;
+	[index: number]: SpeechRecognitionResult;
+};
+
+type SpeechRecognitionResult = {
+	readonly length: number;
+	item(index: number): SpeechRecognitionAlternative;
+	[index: number]: SpeechRecognitionAlternative;
+	isFinal: boolean;
+};
+
+type SpeechRecognitionAlternative = {
+	transcript: string;
+	confidence: number;
+};
+
+interface SpeechRecognitionErrorEvent extends Event {
+	error: string;
+}
+
+declare global {
+	interface Window {
+		SpeechRecognition: {
+			new(): SpeechRecognition;
+		};
+		webkitSpeechRecognition: {
+			new(): SpeechRecognition;
+		};
+	}
+}
+
+export type PromptInputSpeechButtonProps = ComponentProps<typeof PromptInputButton> & {
+	textareaRef?: RefObject<HTMLTextAreaElement | null>;
+	onTranscriptionChange?: (text: string) => void;
+};
+
+export const PromptInputSpeechButton = ({
+	className,
+	textareaRef,
+	onTranscriptionChange,
+	...props
+}: PromptInputSpeechButtonProps) => {
+	const [isListening, setIsListening] = useState(false);
+	const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+	const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+	useEffect(() => {
+		if (
+			typeof window !== 'undefined' &&
+			('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+		) {
+			const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+			const speechRecognition = new SpeechRecognition();
+
+			speechRecognition.continuous = true;
+			speechRecognition.interimResults = true;
+			speechRecognition.lang = 'en-US';
+
+			speechRecognition.onstart = () => {
+				setIsListening(true);
+			};
+
+			speechRecognition.onend = () => {
+				setIsListening(false);
+			};
+
+			speechRecognition.onresult = (event) => {
+				let finalTranscript = '';
+
+				for (let i = event.resultIndex; i < event.results.length; i++) {
+					const result = event.results[i];
+					if (result.isFinal) {
+						finalTranscript += result[0]?.transcript ?? '';
+					}
+				}
+
+				if (finalTranscript && textareaRef?.current) {
+					const textarea = textareaRef.current;
+					const currentValue = textarea.value;
+					const newValue = currentValue + (currentValue ? ' ' : '') + finalTranscript;
+
+					textarea.value = newValue;
+					textarea.dispatchEvent(new Event('input', { bubbles: true }));
+					onTranscriptionChange?.(newValue);
+				}
+			};
+
+			speechRecognition.onerror = (event) => {
+				console.error('Speech recognition error:', event.error);
+				setIsListening(false);
+			};
+
+			recognitionRef.current = speechRecognition;
+			setRecognition(speechRecognition);
+		}
+
+		return () => {
+			if (recognitionRef.current) {
+				recognitionRef.current.stop();
+			}
+		};
+	}, [textareaRef, onTranscriptionChange]);
+
+	const toggleListening = useCallback(() => {
+		if (!recognition) {
+			return;
+		}
+
+		if (isListening) {
+			recognition.stop();
+		} else {
+			recognition.start();
+		}
+	}, [recognition, isListening]);
+
+	return (
+		<PromptInputButton
+			className={cn(
+				'relative transition-all duration-200',
+				isListening && 'animate-pulse bg-accent text-accent-foreground',
+				className
+			)}
+			disabled={!recognition}
+			onClick={toggleListening}
+			{...props}
+		>
+			<MicIcon className="size-4" />
+		</PromptInputButton>
+	);
+};
+
 export type PromptInputSelectProps = ComponentProps<typeof Select>;
 
 export const PromptInputSelect = (props: PromptInputSelectProps) => <Select {...props} />;
@@ -1020,11 +1164,9 @@ export const PromptInputSelectValue = ({ className, ...props }: PromptInputSelec
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
 
 export const PromptInputHoverCard = ({
-	openDelay = 0,
-	closeDelay = 0,
 	...props
 }: PromptInputHoverCardProps) => (
-	<HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
+	<HoverCard {...props} />
 );
 
 export type PromptInputHoverCardTriggerProps = ComponentProps<typeof HoverCardTrigger>;

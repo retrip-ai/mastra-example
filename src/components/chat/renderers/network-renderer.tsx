@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { memo, useMemo } from 'react';
 import { MessageResponse } from '@/components/ai-elements/message';
-import { NetworkExecution } from '@/components/ai-elements/network-execution';
+
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning';
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources';
 import { useNetworkData } from '@/hooks/use-network-data';
@@ -56,7 +56,7 @@ function extractToolUIFromNetwork(networkData: NetworkPart['data']): Array<{
 const NetworkRendererComponent = memo<RendererProps<NetworkPart>>(
     ({ part, partIndex, isLastMessage, status, hasTextPart }) => {
         const networkData = part.data;
-        const isStreaming = status === 'streaming';
+        const isStreaming = status === 'streaming' && isLastMessage;
 
         // Use hook for structured data extraction
         const { reasoning, sources, hasOutput, output } = useNetworkData(networkData);
@@ -86,7 +86,7 @@ const NetworkRendererComponent = memo<RendererProps<NetworkPart>>(
                         <Component data={data} key={`${toolName}-${index}`} />
                     ))}
                     {/* NetworkExecution for technical details */}
-                    <NetworkExecution data={networkData} isStreaming={false} />
+                    {/* NetworkExecution removed per user request */}
                     {/* Show sources if they exist */}
                     {sources && sources.length > 0 && (
                         <Sources>
@@ -123,8 +123,8 @@ const NetworkRendererComponent = memo<RendererProps<NetworkPart>>(
                 {toolUIResults.map(({ Component, data, toolName }, index) => (
                     <Component data={data} key={`${toolName}-${index}`} />
                 ))}
-                {/* NetworkExecution for technical details */}
-                <NetworkExecution data={networkData} isStreaming={isStreaming} />
+                {/* NetworkExecution removed per user request */}
+
                 {/* Show sources if they exist */}
                 {sources && sources.length > 0 && (
                     <Sources>
@@ -142,6 +142,8 @@ const NetworkRendererComponent = memo<RendererProps<NetworkPart>>(
                         </SourcesContent>
                     </Sources>
                 )}
+                {/* Show response text if it exists (e.g. streaming from a step) and no separate text part exists */}
+                {!hasTextPart && output && <MessageResponse>{output}</MessageResponse>}
             </div>
         );
     }

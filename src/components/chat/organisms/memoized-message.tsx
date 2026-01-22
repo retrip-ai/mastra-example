@@ -13,10 +13,14 @@ interface MemoizedMessageProps {
 }
 
 /**
- * Check if the message has a text part
+ * Check if the message has a text part with actual content
  */
 function hasTextPart(parts: UIMessage['parts']): boolean {
-    return parts.some((p) => p.type === 'text');
+    return parts.some((p) => {
+        if (p.type !== 'text') return false;
+        const textPart = p as { type: 'text'; text?: string };
+        return textPart.text !== undefined && textPart.text.trim() !== '';
+    });
 }
 
 /**
@@ -63,13 +67,53 @@ function areMessagesEqual(prev: MemoizedMessageProps, next: MemoizedMessageProps
  * ))}
  * ```
  */
+import { ThinkingPlaceholder } from '../molecules/thinking-placeholder';
+
+// ...
+
 export const MemoizedMessage = memo<MemoizedMessageProps>(
     ({ message, isLastMessage, status }) => {
         const allParts = message.parts as GenericPart[];
         const hasText = useMemo(() => hasTextPart(message.parts), [message.parts]);
 
+        const showPlaceholder = useMemo(() => {
+            if (!isLastMessage || status !== 'streaming') return false;
+
+            // If we have text, we are outputting.
+            if (hasText) return false;
+
+            // If we have reasoning part, it handles its own "Thinking" state.
+            const hasReasoning = allParts.some(p => p.type === 'reasoning');
+            if (hasReasoning) return false;
+
+            // If we have tool calls, we are doing something.
+            const hasTool = allParts.some(p => p.type.startsWith('tool-'));
+            if (hasTool) return false;
+
+            // Check data-network parts for visible content (reasoning or tool results)
+            const hasNetworkContent = allParts.some(p => {
+                if (p.type !== 'data-network') return false;
+                const data = (p as any).data;
+                if (!data?.steps) return false;
+
+                return data.steps.some((step: any) => {
+                    // Check for reasoning
+                    if (step.task?.reason) return true;
+                    // Check for tool results
+                    if (step.task?.toolResults?.length > 0) return true;
+                    return false;
+                });
+            });
+
+            if (hasNetworkContent) return false;
+
+            // If no visible content found, show "Thinking..." placeholder
+            return true;
+        }, [isLastMessage, status, hasText, allParts]);
+
         return (
             <div className="space-y-2">
+                {showPlaceholder && <ThinkingPlaceholder />}
                 {allParts.map((part, index) => (
                     <MessagePartRenderer
                         key={`${message.id}-${index}-${part.type}`}
@@ -108,7 +152,11 @@ export function useProcessedMessages(messages: UIMessage[]): ProcessedMessage[] 
     return useMemo(() => {
         return messages.map((message) => ({
             message,
-            hasText: message.parts.some((p) => p.type === 'text'),
+            hasText: message.parts.some((p) => {
+                if (p.type !== 'text') return false;
+                const textPart = p as { type: 'text'; text?: string };
+                return textPart.text !== undefined && textPart.text.trim() !== '';
+            }),
             toolCount: message.parts.filter((p) => p.type.startsWith('tool-')).length,
             hasNetwork: message.parts.some((p) => p.type === 'data-network'),
         }));

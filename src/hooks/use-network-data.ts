@@ -58,9 +58,40 @@ export function useNetworkData(
             sources = output.sources && output.sources.length > 0 ? output.sources : null;
         }
 
-        // Check for output
-        const hasOutput = networkData.output !== undefined && networkData.output !== null;
-        const output = hasOutput ? String(networkData.output) : null;
+        // Extract output in order of priority:
+        // 1. networkData.output (top-level, available when network finishes)
+        // 2. step.output from completed steps
+        // 3. step.task.text from running steps (streaming text)
+        let output = networkData.output !== undefined && networkData.output !== null ? String(networkData.output) : null;
+
+        // If no top-level output, search through steps
+        if (!output && networkData.steps) {
+            // Iterate through steps in reverse order to get the most recent output
+            for (let i = networkData.steps.length - 1; i >= 0; i--) {
+                const step = networkData.steps[i];
+                
+                // Check step.output first (completed steps)
+                if (step.output !== undefined && step.output !== null) {
+                    const stepOutput = String(step.output);
+                    if (stepOutput.trim()) {
+                        output = stepOutput;
+                        break;
+                    }
+                }
+                
+                // Check step.task.text (streaming/running steps)
+                const task = step as { task?: { text?: string } };
+                if (task.task?.text) {
+                    const taskText = task.task.text;
+                    if (taskText.trim()) {
+                        output = taskText;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const hasOutput = output !== null && output.trim() !== '';
 
         return {
             reasoning,

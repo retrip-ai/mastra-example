@@ -26,7 +26,8 @@ import {
 } from '../components/ui/empty';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '../components/ui/sidebar';
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
-import appCss from '../styles.css?url';
+
+import appCss from '../styles.css?url'
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -123,9 +124,7 @@ function NotFound() {
 						The page you're looking for doesn't exist or has been moved.
 					</EmptyDescription>
 				</EmptyHeader>
-				<Button asChild>
-					<Link to="/">Go back home</Link>
-				</Button>
+				<Button render={<Link to="/" />}>Go back home</Button>
 			</Empty>
 		</div>
 	);
